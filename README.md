@@ -1,7 +1,9 @@
+# Cleanup Orphan Images
+
+Published at https://wordpress.org/plugins/cleanup-orphan-images/
+
 WordPress plugin Finds and deletes orphan media files from the uploads directory that are not registered in WordPress DB.
-
 This does not include Unattached media, which can be easily found and removed in the standard Media Library.
-
 These orphan files may have been left behind from:
 
 * Failed or interrupted uploads
