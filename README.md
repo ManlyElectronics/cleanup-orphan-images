@@ -47,6 +47,16 @@ Review the list before deletion. Some files may still be used by themes or plugi
 
 No, deletion is permanent. Back up your site first.
 
+= Interaction with other plugins =
+
+Some hosting providers and image optimisation plugins (such as Imagify or ShortPixel) auto-generate `.webp` versions of images using Nginx/Apache rewrite rules and store them in the uploads folder without registering them in WordPress.
+
+Server-side rewrite rules is not part of the official WordPress media management specification and is not endorsed by WordPress. This plugin follows the WordPress standard — if a file is not registered in the WordPress database, it is an orphan. Any files created outside of that standard by third-party tools or hosting configurations are beyond the scope and responsibility of this plugin.
+
+If you see unexpected files in the scan results, do not select them for deletion unless you are absolutely sure they are not used.
+
+For image optimisation, the workaround is to disable server-side rewriting plugins and switch to a WordPress-native WebP converter (such as [Manly WebP Converter](https://wordpress.org/plugins/manly-webp-converter/)) which significantly reduces file sizes and registers converted files properly in the database — after which those files will never appear as orphans.
+
 
 == Changelog ==
 
