@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Cleanup Orphan Images
  * Description: Finds and deletes orphan image files from the uploads directory that are not registered in WordPress.
- * Version: 1.8.0
+ * Version: 1.8.1
  * Author: Manly Electronics
  * Author URI: https://manlyelectronics.com.au
  * License: GPLv3 or later

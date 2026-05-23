@@ -60,6 +60,9 @@ For image optimisation, the workaround is to disable server-side rewriting plugi
 
 == Changelog ==
 
+= 1.8.1 =
+* Added FAQ entry explaining interaction with server-side WebP rewriting plugins
+
 = 1.8.0 =
 * Simplified plugin to focus on orphan files only
 * Removed unattached images feature (use WordPress built-in Media Library filter instead)

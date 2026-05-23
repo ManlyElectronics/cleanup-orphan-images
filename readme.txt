@@ -4,7 +4,7 @@ Tags: cleanup, orphan, images, media, files
 Requires at least: 5.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.8.0
+Stable tag: 1.8.1
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -69,6 +69,9 @@ For image optimisation, the workaround is to disable server-side rewriting plugi
 
 
 == Changelog ==
+
+= 1.8.1 =
+* Added FAQ entry explaining interaction with server-side WebP rewriting plugins
 
 = 1.8.0 =
 * Simplified plugin to focus on orphan files only
