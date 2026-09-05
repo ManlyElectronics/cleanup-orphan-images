@@ -2,17 +2,17 @@
 Contributors: dimitriaus
 Tags: cleanup, orphan, images, media, files
 Requires at least: 5.0
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.8.1
+Stable tag: 1.8.2
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
-Finds and deletes orphan media files from the uploads directory that are not registered in WordPress.
+Orphan media files cleaner
 
 == Description ==
 
-Removes files left in the uploads folder that are invisible in the WordPress Media Library. This does not include Unattached media, which can be easily found and removed in the standard Media Library.
+Finds and deletes redundant files from the uploads folders that are not visible in WordPress Media Library.
 
 These orphan files may have been left behind from:
 
@@ -35,7 +35,7 @@ These orphan files may have been left behind from:
 
 = Note =
 
-This plugin does NOT manage "unattached" images in the Media Library. WordPress already provides built-in filtering for unattached media. This plugin focuses specifically on finding physical files that WordPress doesn't know about at all.
+This plugin does NOT manage "unattached" images in the Media Library. WordPress already provides built-in filtering for unattached media.
 
 == Installation ==
 
@@ -69,6 +69,9 @@ For image optimisation, the workaround is to disable server-side rewriting plugi
 
 
 == Changelog ==
+
+= 1.8.2 =
+* Updated: Tested up to WordPress 7.1.
 
 = 1.8.1 =
 * Added FAQ entry explaining interaction with server-side WebP rewriting plugins
