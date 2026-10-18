@@ -2,7 +2,7 @@
 Contributors: dimitriaus
 Tags: cleanup, orphan, images, media, files
 Requires at least: 5.0
-Tested up to: 7.1.3
+Tested up to: 7.1
 Requires PHP: 7.4
 Stable tag: 1.8.4
 License: GPLv3 or later
