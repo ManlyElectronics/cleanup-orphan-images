@@ -20,6 +20,7 @@ These orphan files may have been left behind from:
 * Supports video: MP4, MOV, AVI, WMV, MKV, WebM, FLV, M4V, MPEG, MPG
 * Supports archives: ZIP, RAR, 7Z, TAR, GZ
 * Safe manual selection before deletion
+* Results are shown in batches of up to 1000 files per scan
 * Warns when orphan count exceeds server's max_input_vars limit (typically 1000)
 * Optimized O(1) performance with hash-based detection
 
@@ -59,6 +60,19 @@ For image optimisation, the workaround is to disable server-side rewriting plugi
 
 
 == Changelog ==
+
+= 1.8.4 =
+* Removed translation function calls; the interface is English only.
+
+= 1.8.3 =
+* Fixed: Media files could be incorrectly reported and deleted as orphans on Windows environments due to a path slash mismatch.
+* Fixed: Duplicate copies of registered files outside their registered folder are now correctly detected.
+* Added: Scan results are now capped at 1000 files per batch to prevent the admin page from hanging on very large uploads folders.
+* Added: Scanned folder path is now displayed on the scan page.
+* Cleanup unused js and handlers.
+
+= 1.8.2 =
+* Updated: Tested up to WordPress 7.1.
 
 = 1.8.1 =
 * Added FAQ entry explaining interaction with server-side WebP rewriting plugins
