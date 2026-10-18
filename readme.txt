@@ -2,9 +2,9 @@
 Contributors: dimitriaus
 Tags: cleanup, orphan, images, media, files
 Requires at least: 5.0
-Tested up to: 7.1
+Tested up to: 7.1.3
 Requires PHP: 7.4
-Stable tag: 1.8.2
+Stable tag: 1.8.4
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -69,6 +69,16 @@ For image optimisation, the workaround is to disable server-side rewriting plugi
 
 
 == Changelog ==
+
+= 1.8.4 =
+* Removed translation function calls; the interface is English only.
+
+= 1.8.3 =
+* Fixed: Media files could be incorrectly reported and deleted as orphans on Windows environments due to a path slash mismatch.
+* Fixed: Duplicate copies of registered files outside their registered folder are now correctly detected.
+* Added: Scan results are now capped at 1000 files per batch to prevent the admin page from hanging on very large uploads folders.
+* Added: Scanned folder path is now displayed on the scan page.
+* Cleanup unused js and handlers.
 
 = 1.8.2 =
 * Updated: Tested up to WordPress 7.1.

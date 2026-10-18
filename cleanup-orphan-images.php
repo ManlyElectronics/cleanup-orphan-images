@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Cleanup Orphan Images
  * Description: Finds and deletes orphan image files from the uploads directory that are not registered in WordPress.
- * Version: 1.8.2
+ * Version: 1.8.4
  * Author: Manly Electronics
  * Author URI: https://manlyelectronics.com.au
  * License: GPLv3 or later
@@ -15,12 +15,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
 
+define( 'CLEANUP_ORPHAN_IMAGES_VERSION', '1.8.4' );
+
 // Add Settings link on Plugins page.
 add_filter(
 	'plugin_action_links_' . plugin_basename( __FILE__ ),
 	function ( $links ) {
 		$settings_url  = admin_url( 'upload.php?page=cleanup-orphan-images' );
-		$settings_link = '<a href="' . esc_url( $settings_url ) . '">' . esc_html__( 'Settings', 'cleanup-orphan-images' ) . '</a>';
+		$settings_link = '<a href="' . esc_url( $settings_url ) . '">Settings</a>';
 		array_unshift( $links, $settings_link );
 		return $links;
 	}
@@ -58,7 +60,6 @@ class Cleanup_Images_Plugin {
 	private function __construct() {
 		add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
 		add_action( 'admin_post_cleanup_images_delete_orphans', array( $this, 'handle_orphan_deletion' ) );
-		add_action( 'wp_ajax_cleanup_images_delete_orphans_ajax', array( $this, 'handle_orphan_deletion_ajax' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts' ) );
 	}
 
@@ -71,29 +72,9 @@ class Cleanup_Images_Plugin {
 		if ( 'upload_page_cleanup-orphan-images' !== $hook ) {
 			return;
 		}
-		wp_enqueue_script(
-			'cleanup-images-admin',
-			plugin_dir_url( __FILE__ ) . 'admin.js',
-			array( 'jquery' ),
-			'1.0',
-			true
-		);
-
-		$upload_dir = wp_upload_dir();
-
-		wp_localize_script(
-			'cleanup-images-admin',
-			'cleanup_images',
-			array(
-				'ajax_url'              => admin_url( 'admin-ajax.php' ),
-				'scan_nonce'            => wp_create_nonce( 'cleanup_images_scan_orphans_nonce' ),
-				'delete_nonce'          => wp_create_nonce( 'cleanup_images_delete_orphans_action' ),
-				'scanning_text'         => esc_html__( 'Scanning for orphan files, please wait...', 'cleanup-orphan-images' ),
-				'no_orphans_found_text' => esc_html__( 'No orphan files found.', 'cleanup-orphan-images' ),
-				'error_text'            => esc_html__( 'An error occurred during the scan.', 'cleanup-orphan-images' ),
-				'upload_base_dir'       => trailingslashit( $upload_dir['basedir'] ),
-			)
-		);
+		// Inline-only script handle for the select-all checkbox logic.
+		wp_register_script( 'cleanup-images-admin', false, array( 'jquery' ), CLEANUP_ORPHAN_IMAGES_VERSION, true );
+		wp_enqueue_script( 'cleanup-images-admin' );
 
 		// Inline script for orphan files select all.
 		$orphan_script = "
@@ -137,8 +118,8 @@ class Cleanup_Images_Plugin {
 	 */
 	public function add_admin_menu() {
 		add_media_page(
-			__( 'Cleanup Orphan Images', 'cleanup-orphan-images' ),
-			__( 'Cleanup Orphan Images', 'cleanup-orphan-images' ),
+			'Cleanup Orphan Images',
+			'Cleanup Orphan Images',
 			'manage_options',
 			'cleanup-orphan-images',
 			array( $this, 'display_admin_page' )
@@ -166,7 +147,7 @@ class Cleanup_Images_Plugin {
 
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'Cleanup Orphan Images', 'cleanup-orphan-images' ); ?></h1>
+			<h1>Cleanup Orphan Images</h1>
 			<?php echo wp_kses_post( $notice_html ); ?>
 			<?php $this->display_orphan_scanner(); ?>
 		</div>
@@ -182,7 +163,7 @@ class Cleanup_Images_Plugin {
 		$scan_executed = false;
 		if ( isset( $_POST['scan_orphan_files'] ) && isset( $_POST['cleanup_images_scan_orphans_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['cleanup_images_scan_orphans_nonce'] ) ), 'cleanup_images_scan_orphans_action' ) ) {
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_die( esc_html__( 'Unauthorized access', 'cleanup-orphan-images' ) );
+				wp_die( 'Unauthorized access' );
 			}
 			$scan_results  = $this->scan_for_orphan_files();
 			$scan_executed = true;
@@ -191,54 +172,53 @@ class Cleanup_Images_Plugin {
 		<div class="orphan-scanner-wrap" style="margin-top: 1em;">
 			
 			<div class="notice notice-info inline" style="margin: 15px 0;">
-				<p><strong><?php esc_html_e( 'What are Orphan  Images?', 'cleanup-orphan-images' ); ?></strong></p>
-				<p><?php esc_html_e( 'Those are physical image files that are invisible in the Media Library because they are not registered in the WordPress database, typically left by failed uploads, plugins, FTP transfers, or database restores.', 'cleanup-orphan-images' ); ?></p>
-				<p><strong style="color: #d63638;"><?php esc_html_e( 'Warning:', 'cleanup-orphan-images' ); ?></strong> <?php esc_html_e( 'Some files may still be used by themes or plugins that reference them directly by URL. Always review before deleting and consider backing up your uploads folder first.', 'cleanup-orphan-images' ); ?></p>
+				<p><strong>What are Orphan Images?</strong></p>
+				<p>Those are physical image files that are invisible in the Media Library because they are not registered in the WordPress database, typically left by failed uploads, plugins, FTP transfers, or database restores.</p>
+				<p><strong style="color: #d63638;">Warning:</strong> Some files may still be used by themes or plugins that reference them directly by URL. Always review before deleting and consider backing up your uploads folder first.</p>
 			</div>
-			<p><strong><?php esc_html_e( 'Supported formats:', 'cleanup-orphan-images' ); ?></strong></p>
+			<p><strong>Supported formats:</strong></p>
 			<ul style="margin-top: 5px; margin-left: 20px;">
-				<li><strong><?php esc_html_e( 'Images:', 'cleanup-orphan-images' ); ?></strong> JPG, JPEG, PNG, GIF, WebP, BMP, TIFF, SVG, ICO</li>
-				<li><strong><?php esc_html_e( 'Documents:', 'cleanup-orphan-images' ); ?></strong> PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, ODT, ODS, ODP, TXT, RTF, CSV</li>
-				<li><strong><?php esc_html_e( 'Audio:', 'cleanup-orphan-images' ); ?></strong> MP3, WAV, OGG, FLAC, AAC, M4A, WMA</li>
-				<li><strong><?php esc_html_e( 'Video:', 'cleanup-orphan-images' ); ?></strong> MP4, MOV, AVI, WMV, MKV, WebM, FLV, M4V, MPEG, MPG</li>
-				<li><strong><?php esc_html_e( 'Archives:', 'cleanup-orphan-images' ); ?></strong> ZIP, RAR, 7Z, TAR, GZ</li>
+				<li><strong>Images:</strong> JPG, JPEG, PNG, GIF, WebP, BMP, TIFF, SVG, ICO</li>
+				<li><strong>Documents:</strong> PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, ODT, ODS, ODP, TXT, RTF, CSV</li>
+				<li><strong>Audio:</strong> MP3, WAV, OGG, FLAC, AAC, M4A, WMA</li>
+				<li><strong>Video:</strong> MP4, MOV, AVI, WMV, MKV, WebM, FLV, M4V, MPEG, MPG</li>
+				<li><strong>Archives:</strong> ZIP, RAR, 7Z, TAR, GZ</li>
 			</ul>
-			<p><strong><?php esc_html_e( 'Scanning time', 'cleanup-orphan-images' ); ?></strong> <?php esc_html_e( 'depends on the number of files in your uploads directory and the size of your Media Library. Large sites may take several minutes.', 'cleanup-orphan-images' ); ?></p>
+			<p><strong>Scanning time</strong> depends on the number of files in your uploads directory and the size of your Media Library. Large sites may take several minutes.</p>
+			<?php $scan_upload_dir = wp_get_upload_dir(); ?>
+			<p><strong>Scanned folder:</strong> <code><?php echo esc_html( trailingslashit( $scan_upload_dir['basedir'] ) ); ?></code> (including all subfolders)</p>
 			<form method="post" action="<?php echo esc_url( admin_url( 'upload.php?page=cleanup-orphan-images' ) ); ?>">
 				<?php wp_nonce_field( 'cleanup_images_scan_orphans_action', 'cleanup_images_scan_orphans_nonce' ); ?>
 				<p>
-					<button type="submit" name="scan_orphan_files" class="button button-primary"><?php esc_html_e( 'Scan for Orphan Files', 'cleanup-orphan-images' ); ?></button>
+					<button type="submit" name="scan_orphan_files" class="button button-primary">Scan for Orphan Files</button>
 				</p>
 			</form>
 
 			<?php if ( $scan_executed ) : ?>
-				<h3><?php esc_html_e( 'Scan Results', 'cleanup-orphan-images' ); ?></h3>
+				<h3>Scan Results</h3>
 
 				<?php if ( empty( $scan_results['orphan_files'] ) ) : ?>
-					<div class="notice notice-success inline"><p><?php esc_html_e( 'No orphan files found.', 'cleanup-orphan-images' ); ?></p></div>
+					<div class="notice notice-success inline"><p>No orphan files found.</p></div>
 				<?php else : ?>
-					<p>
-						<?php
-						/* translators: %d: number of orphan files found */
-						printf( esc_html__( 'Found %d orphan files:', 'cleanup-orphan-images' ), count( $scan_results['orphan_files'] ) );
-						?>
-					</p>
+					<?php
+					$batch_limit   = 1000;
+					$total_orphans = count( $scan_results['orphan_files'] );
+					$batch_files   = array_slice( $scan_results['orphan_files'], 0, $batch_limit );
+					?>
+					<p>Found <?php echo absint( $total_orphans ); ?> orphan files:</p>
+
+					<?php if ( $total_orphans > $batch_limit ) : ?>
+						<div class="notice notice-warning inline"><p>Showing the first <?php echo absint( $batch_limit ); ?> of <?php echo absint( $total_orphans ); ?> orphan files. Delete this batch and scan again to process the next one.</p></div>
+					<?php endif; ?>
 
 					<?php
 					// Add warning for large numbers of files.
 					$max_input_vars = (int) ini_get( 'max_input_vars' );
-					if ( count( $scan_results['orphan_files'] ) > ( $max_input_vars - 50 ) ) :
+					if ( count( $batch_files ) > ( $max_input_vars - 50 ) ) :
 						?>
 						<div class="notice notice-warning inline"><p>
-							<strong><?php esc_html_e( 'Warning:', 'cleanup-orphan-images' ); ?></strong>
-							<?php
-							printf(
-								/* translators: 1: number of files found, 2: server's max_input_vars limit */
-								esc_html__( 'You have %1$d files, but your server is limited to processing %2$d form fields at once. Consider selecting files in smaller batches to avoid incomplete deletions.', 'cleanup-orphan-images' ),
-								absint( count( $scan_results['orphan_files'] ) ),
-								absint( $max_input_vars )
-							);
-							?>
+							<strong>Warning:</strong>
+							You have <?php echo absint( count( $batch_files ) ); ?> files, but your server is limited to processing <?php echo absint( $max_input_vars ); ?> form fields at once. Consider selecting files in smaller batches to avoid incomplete deletions.
 						</p></div>
 					<?php endif; ?>
 
@@ -249,12 +229,12 @@ class Cleanup_Images_Plugin {
 							<thead>
 								<tr>
 									<th class="check-column"><input type="checkbox" id="cb-select-all-orphans"></th>
-									<th><?php esc_html_e( 'Image File Path', 'cleanup-orphan-images' ); ?></th>
-									<th><?php esc_html_e( 'File Size', 'cleanup-orphan-images' ); ?></th>
+									<th>Image File Path</th>
+									<th>File Size</th>
 								</tr>
 							</thead>
 							<tbody>
-							<?php foreach ( $scan_results['orphan_files'] as $file_path ) : ?>
+							<?php foreach ( $batch_files as $file_path ) : ?>
 								<?php $file_size = file_exists( $file_path ) ? size_format( filesize( $file_path ) ) : 'Unknown'; ?>
 								<tr>
 									<th scope="row" class="check-column"><input type="checkbox" name="orphan_files_to_delete[]" value="<?php echo esc_attr( $file_path ); ?>"></th>
@@ -264,7 +244,7 @@ class Cleanup_Images_Plugin {
 							<?php endforeach; ?>
 							</tbody>
 						</table>
-						<?php submit_button( __( 'Delete Selected Orphan Images', 'cleanup-orphan-images' ), 'delete', 'submit-delete-orphans', true, array( 'class' => 'button button-danger' ) ); ?>
+						<?php submit_button( 'Delete Selected Orphan Images', 'delete', 'submit-delete-orphans', true, array( 'class' => 'button button-danger' ) ); ?>
 					</form>
 				<?php endif; ?>
 			<?php endif; ?>
@@ -315,8 +295,6 @@ class Cleanup_Images_Plugin {
 		foreach ( $results as $relative_path ) {
 			// Store the full relative path.
 			$files[ $relative_path ] = true;
-			// Also store just the filename for scaled image matching.
-			$files[ basename( $relative_path ) ] = true;
 		}
 
 		// Also get all thumbnail/size variations from _wp_attachment_metadata.
@@ -346,18 +324,14 @@ class Cleanup_Images_Plugin {
 			if ( ! empty( $meta['sizes'] ) && is_array( $meta['sizes'] ) ) {
 				foreach ( $meta['sizes'] as $size_data ) {
 					if ( ! empty( $size_data['file'] ) ) {
-						$size_file                   = $file_dir . $size_data['file'];
-						$files[ $size_file ]         = true;
-						$files[ $size_data['file'] ] = true;
+						$files[ $file_dir . $size_data['file'] ] = true;
 					}
 				}
 			}
 
 			// Add original image if exists (WordPress 5.3+ big image handling).
 			if ( ! empty( $meta['original_image'] ) ) {
-				$original_file                    = $file_dir . $meta['original_image'];
-				$files[ $original_file ]          = true;
-				$files[ $meta['original_image'] ] = true;
+				$files[ $file_dir . $meta['original_image'] ] = true;
 			}
 		}
 
@@ -373,19 +347,27 @@ class Cleanup_Images_Plugin {
 	 * @return bool True if file is in media library.
 	 */
 	private function is_file_in_media_library_fast( $file_path, $media_library_files ) {
-		$upload_dir    = wp_upload_dir();
-		$relative_path = str_replace( $upload_dir['basedir'], '', $file_path );
-		$relative_path = ltrim( str_replace( '\\', '/', $relative_path ), '/' );
+		$upload_dir = wp_upload_dir();
+		// Normalize slashes on both sides before stripping the base dir (Windows compatibility).
+		$base_dir      = trailingslashit( str_replace( '\\', '/', $upload_dir['basedir'] ) );
+		$relative_path = str_replace( '\\', '/', $file_path );
+		$relative_path = ltrim( str_replace( $base_dir, '', $relative_path ), '/' );
+
+		// Fail-safe: if the base dir could not be stripped, never report the file as orphan.
+		if ( preg_match( '#^[A-Za-z]:/#', $relative_path ) ) {
+			return true;
+		}
 
 		// Check exact path match.
 		if ( isset( $media_library_files[ $relative_path ] ) ) {
 			return true;
 		}
 
-		// Check filename only (for scaled images).
-		$filename = basename( $file_path );
-		if ( isset( $media_library_files[ $filename ] ) ) {
-			return true;
+		// Check size variants (e.g. image-150x150.webp) of a registered file in the same directory.
+		if ( preg_match( '/^(.+)-\d+x\d+(\.[^.]+)$/', $relative_path, $matches ) ) {
+			if ( isset( $media_library_files[ $matches[1] . $matches[2] ] ) || isset( $media_library_files[ $matches[1] . '-scaled' . $matches[2] ] ) ) {
+				return true;
+			}
 		}
 
 		return false;
@@ -522,7 +504,7 @@ class Cleanup_Images_Plugin {
 		} else {
 			// No files selected.
 			$notice_data = array(
-				'message' => esc_html__( 'No files selected for deletion.', 'cleanup-orphan-images' ),
+				'message' => 'No files selected for deletion.',
 				'type'    => 'error',
 			);
 			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode, WordPress.WP.AlternativeFunctions.json_encode_json_encode
@@ -532,34 +514,16 @@ class Cleanup_Images_Plugin {
 		// Build message.
 		$message = '';
 		if ( $deleted_count > 0 ) {
-			$message = sprintf(
-				/* translators: %d: number of orphan images deleted */
-				_n(
-					'%d orphan image deleted.',
-					'%d orphan images deleted.',
-					$deleted_count,
-					'cleanup-orphan-images'
-				),
-				$deleted_count
-			);
+			$message = sprintf( 1 === $deleted_count ? '%d orphan image deleted.' : '%d orphan images deleted.', $deleted_count );
 		}
 		if ( $failed_count > 0 ) {
 			if ( ! empty( $message ) ) {
 				$message .= ' ';
 			}
-			$message .= sprintf(
-				/* translators: %d: number of images that could not be deleted */
-				_n(
-					'%d image could not be deleted.',
-					'%d images could not be deleted.',
-					$failed_count,
-					'cleanup-orphan-images'
-				),
-				$failed_count
-			);
+			$message .= sprintf( 1 === $failed_count ? '%d image could not be deleted.' : '%d images could not be deleted.', $failed_count );
 		}
 		if ( empty( $message ) ) {
-			$message = esc_html__( 'No action taken.', 'cleanup-orphan-images' );
+			$message = 'No action taken.';
 		}
 		$notice_type = $deleted_count > 0 ? 'success' : 'error';
 		wp_safe_redirect(
@@ -578,73 +542,6 @@ class Cleanup_Images_Plugin {
 			)
 		);
 		exit;
-	}
-
-	/**
-	 * Handle orphan file deletion via AJAX.
-	 */
-	public function handle_orphan_deletion_ajax() {
-		// Check capability.
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( 'Unauthorized access' );
-		}
-		// Check nonce - accept both parameter names for compatibility.
-		$nonce = '';
-		if ( isset( $_POST['_wpnonce_delete_orphans'] ) ) {
-			$nonce = sanitize_text_field( wp_unslash( $_POST['_wpnonce_delete_orphans'] ) );
-		} elseif ( isset( $_POST['_ajax_nonce'] ) ) {
-			$nonce = sanitize_text_field( wp_unslash( $_POST['_ajax_nonce'] ) );
-		}
-		if ( empty( $nonce ) || ! wp_verify_nonce( $nonce, 'cleanup_images_delete_orphans_action' ) ) {
-			wp_send_json_error( 'Invalid nonce' );
-		}
-		$deleted_count = 0;
-		$failed_count  = 0;
-		$upload_dir    = wp_upload_dir();
-		$base_dir      = trailingslashit( str_replace( '\\', '/', $upload_dir['basedir'] ) );
-		// Check if files are selected.
-		if ( isset( $_POST['orphan_files_to_delete'] ) && is_array( $_POST['orphan_files_to_delete'] ) ) {
-			// Set time limit for batch operations (discouraged but necessary for large file operations).
-			if ( function_exists( 'set_time_limit' ) ) {
-				set_time_limit( 120 ); // phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged
-			}
-			$files_to_delete = array_map( 'sanitize_text_field', wp_unslash( $_POST['orphan_files_to_delete'] ) );
-			foreach ( $files_to_delete as $file_path ) {
-				// Normalize the file path.
-				$normalized_file_path = str_replace( '\\', '/', $file_path );
-				$normalized_file_path = preg_replace( '#/+#', '/', $normalized_file_path );
-				// Check if file exists and is within uploads directory.
-				$file_exists    = file_exists( $file_path );
-				$in_uploads_dir = 0 === strpos( $normalized_file_path, $base_dir );
-
-				if ( $file_exists && $in_uploads_dir ) {
-					if ( wp_delete_file( $file_path ) ) {
-						++$deleted_count;
-					} else {
-						++$failed_count;
-					}
-				} else {
-					++$failed_count;
-				}
-			}
-		}
-		// Send JSON response.
-		wp_send_json_success(
-			array(
-				'deleted' => $deleted_count,
-				'failed'  => $failed_count,
-				'message' => sprintf(
-				/* translators: %d: number of images deleted via AJAX */
-					_n(
-						'%d image deleted.',
-						'%d images deleted.',
-						$deleted_count,
-						'cleanup-orphan-images'
-					),
-					$deleted_count
-				),
-			)
-		);
 	}
 }
 Cleanup_Images_Plugin::get_instance();
